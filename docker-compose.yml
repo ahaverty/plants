@@ -1,0 +1,17 @@
+# Plants tracker. Copy .env.example to .env and fill it in, then: docker compose up -d --build
+# Page: http://localhost:8772 (put a reverse proxy in front for your phone; keep it on your
+# LAN or VPN, there is no login). MCP: http://127.0.0.1:8772/mcp (don't proxy /mcp).
+services:
+  plants:
+    build: .
+    container_name: plants
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8772:8772"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/data
+      # Optional: let Claude attach photos from a host folder with plant_photo(path=...).
+      # Set PLANTS_HOST_ROOT=/host and PLANTS_HOST_PREFIX to the same folder as the host spells it.
+      # - /path/on/host:/host:ro

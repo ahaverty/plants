@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14201a">
+<title>Plants</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+  :root {
+    --bg: #f4f6f2; --card: #ffffff; --ink: #1d2a22; --muted: #66756b; --line: #dde3dc;
+    --accent: #2f7d4f; --accent-ink: #fff; --water: #2b6cb0; --feed: #a0661b; --warn: #b4442f;
+    --chip: #eef2ec;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #101713; --card: #18221c; --ink: #e5ece6; --muted: #93a398; --line: #26332b;
+      --accent: #5bbf84; --accent-ink: #0d1510; --water: #7fb3ea; --feed: #e0a85a; --warn: #f08a74;
+      --chip: #212d25; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 640px; margin: 0 auto; padding: max(16px, env(safe-area-inset-top)) 16px 80px; }
+  h1 { font-size: 24px; margin: 4px 0 2px; }
+  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+    margin: 24px 0 8px; display: flex; align-items: center; gap: 8px; }
+  h2 .sp { flex: 1; }
+  .count { font-weight: 400; text-transform: none; letter-spacing: 0; }
+  .sub { color: var(--muted); font-size: 14px; }
+  .banner { background: var(--chip); border-radius: 12px; padding: 10px 12px; margin-top: 12px;
+    display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 10px; display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
+  .card.held { opacity: .7; }
+  .card.done { opacity: .55; } .card.done .name { text-decoration: line-through; }
+  .pic { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; flex: none;
+    background: var(--chip); display: grid; place-items: center; font-size: 28px; }
+  .grow { flex: 1; min-width: 0; }
+  .name { font-weight: 600; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .tag { font-size: 12px; padding: 2px 8px; border-radius: 99px; background: var(--chip); }
+  .tag.water { color: var(--water); } .tag.feed { color: var(--feed); } .tag.late { color: var(--warn); }
+  button { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+    border-radius: 10px; padding: 8px 12px; cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  button.small { padding: 4px 10px; font-size: 13px; }
+  .check { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--accent);
+    background: transparent; font-size: 22px; padding: 0; flex: none; color: var(--accent-ink); }
+  .card.done .check { background: var(--accent); }
+  .linky { background: none; border: none; color: var(--muted); padding: 2px 0; font-size: 13px; text-decoration: underline; }
+  .empty { text-align: center; padding: 28px 8px; color: var(--muted); }
+  .list .card { cursor: pointer; }
+  dialog { border: none; border-radius: 18px; padding: 0; width: min(560px, calc(100vw - 24px));
+    background: var(--card); color: var(--ink); max-height: 90vh; }
+  dialog::backdrop { background: rgba(0,0,0,.5); }
+  .sheet { padding: 16px; }
+  .hero { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 12px; background: var(--chip); }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-top: 10px; }
+  input, select, textarea { font: inherit; width: 100%; padding: 8px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .care { background: var(--chip); border-radius: 10px; padding: 10px; font-size: 14px; margin-top: 10px; }
+  .hist { font-size: 14px; } .hist div { display: flex; justify-content: space-between; align-items: center;
+    padding: 4px 0; border-bottom: 1px solid var(--line); }
+  details summary { cursor: pointer; color: var(--muted); margin-top: 12px; }
+  .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--ink);
+    color: var(--bg); padding: 10px 16px; border-radius: 99px; display: none; gap: 12px; align-items: center;
+    max-width: calc(100vw - 32px); }
+  .graveyard summary { margin: 24px 0 8px; }
+  .card.dead .pic { filter: grayscale(1); opacity: .7; }
+  .strip { display: flex; gap: 8px; overflow-x: auto; padding: 8px 0 4px; }
+  .strip button { flex: none; padding: 0; border: 2px solid transparent; border-radius: 10px;
+    background: none; color: var(--muted); font-size: 12px; text-align: center; }
+  .strip button.sel { border-color: var(--accent); }
+  .strip img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; display: block; }
+  .ai { border: 1px solid var(--line); border-radius: 10px; padding: 10px; font-size: 14px; margin-top: 8px; }
+  .ai ul { margin: 6px 0 0; padding-left: 20px; } .ai li { margin: 2px 0; }
+  .ai .when { color: var(--muted); font-size: 12px; }
+  .adv { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px;
+    margin-bottom: 8px; font-size: 14px; }
+  .adv .top { display: flex; gap: 10px; align-items: center; cursor: pointer; }
+  .adv .pic { width: 44px; height: 44px; font-size: 20px; }
+  .adv .acts { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .adv .acts div { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .toast button { background: transparent; color: inherit; border-color: currentColor; }
+  /* All done: the day's list folds up into a success bar; Show opens it again */
+  .alldone { background: var(--accent); color: var(--accent-ink); border-radius: 14px; padding: 12px 14px;
+    margin-top: 16px; display: flex; align-items: center; gap: 12px; }
+  .alldone.pop { animation: pop .5s cubic-bezier(.2, 1.6, .4, 1); }
+  .alldone .big { font-size: 28px; line-height: 1; }
+  .alldone b { display: block; }
+  .alldone .sm { font-size: 13px; opacity: .85; }
+  .alldone button { background: transparent; color: inherit; border-color: currentColor; flex: none; }
+  .fold { display: grid; grid-template-rows: 1fr; transition: grid-template-rows .6s ease, opacity .6s ease; }
+  .fold > div { overflow: hidden; min-height: 0; }
+  .fold.shut { grid-template-rows: 0fr; opacity: 0; }
+  @keyframes pop { 0% { transform: scale(.9); opacity: 0; } 100% { transform: none; opacity: 1; } }
+  .confetti { position: fixed; top: -12px; width: 8px; height: 12px; border-radius: 2px; pointer-events: none; z-index: 10; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Plants</h1>
+  <div class="sub" id="weather"></div>
+  <div id="snoozeBanner"></div>
+  <div id="jobs"></div>
+  <div id="due"></div>
+  <div id="advice"></div>
+  <h2>All plants <span class="sp"></span><button class="small" id="addBtn">+ Add</button></h2>
+  <div class="list" id="all"></div>
+  <div class="list" id="graveyard"></div>
+</main>
+
+<dialog id="dlg"><div class="sheet" id="sheet"></div></dialog>
+<div class="toast" id="toast"><span id="toastMsg"></span><button class="small" id="toastUndo">Undo</button></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const api = (path, opts = {}) => {
+  const form = opts.body instanceof FormData;
+  return fetch('api/' + path, {...opts,
+    headers: opts.body && !form ? {'Content-Type': 'application/json'} : {},
+    body: opts.body && !form ? JSON.stringify(opts.body) : opts.body}).then(r => r.json());
+};
+const post = (path, body) => api(path, {method: 'POST', body});
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pic = p => p.photo ? `<img class="pic" src="photos/${esc(p.photo)}" alt="" loading="lazy">` : `<div class="pic">🪴</div>`;
+const MONTHS = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+let board = null;
+// all-done state: left = plants still to do at the last render (null before the first),
+// dueOpen = the folded list has been opened again with Show
+let left = null, dueOpen = false, dueDay = null;
+
+function when(iso) {
+  if (!iso) return '';
+  const d = Math.round((new Date(iso) - new Date(board.today)) / 864e5);
+  if (d < 0) return `${-d}d overdue`;
+  if (d === 0) return 'today';
+  if (d === 1) return 'tomorrow';
+  if (d < 14) return `in ${d} days`;
+  return new Date(iso).toLocaleDateString('en-IE', {day: 'numeric', month: 'short'});
+}
+
+function dueCard(p) {
+  const done = p.done_today.length > 0;
+  const late = !done && p.overdue_days > 0 ? `<span class="tag late">${p.overdue_days}d late</span>` : '';
+  const tags = done
+    ? p.done_today.map(k => `<span class="tag">${k === 'skip' ? 'still damp' : k === 'water' ? '💧 watered' : '🌱 fed'}</span>`).join('')
+    : p.todo.map(t => `<span class="tag ${t}">${t === 'water' ? '💧 Water' : '🌱 Feed'}</span>`).join('');
+  return `<div class="card ${done ? 'done' : p.hold ? 'held' : ''}">
+    <div onclick="openPlant(${p.id})">${pic(p)}</div>
+    <div class="grow" onclick="openPlant(${p.id})">
+      <div class="name">${esc(p.name)}</div>
+      <div class="tags">${tags}${late}</div>
+      ${!done && p.hold ? `<div class="meta">${esc(p.hold)}</div>` : ''}
+      ${!done ? `<button class="linky" onclick="event.stopPropagation(); mark([${p.id}], 'skip')">soil still damp</button>` : ''}
+    </div>
+    <button class="check" aria-label="${done ? 'Untick' : 'Tick'}"
+      onclick="${done ? `unmark([${p.id}])` : `mark([${p.id}], 'due')`}">${done ? '✓' : ''}</button>
+  </div>`;
+}
+
+async function load() {
+  board = await api('board');
+  const w = board.weather;
+  $('#weather').textContent = w ? `Rain ${w.rain_yesterday_mm ?? 0}mm yesterday, ${w.rain_last_7_days_mm}mm this week · `
+    + `${w.rain_next_24h_mm}mm due next 24h · ${Math.round(w.min_tonight_c)}° tonight` : '';
+  $('#snoozeBanner').innerHTML = board.snoozed_all_until
+    ? `<div class="banner"><span>😴 Snoozed for today</span><button class="small" onclick="unsnooze()">Show list</button></div>` : '';
+
+  $('#jobs').innerHTML = (board.jobs || []).map(j => `<div class="banner"><span onclick="openPlant(${j.id})">🪴 <b>${esc(j.task)}</b>: ${esc(j.name)}</span>
+    <button class="small" onclick="jobDone(${j.id})">Done</button></div>`).join('');
+
+  let html = '', any = false, total = 0, todo = 0;
+  for (const r of board.rooms) {
+    if (board.snoozed_all_until) break;
+    const items = r.plants.filter(p => (p.todo.length && !p.snoozed_until) || p.done_today.length);
+    if (!items.length) continue;
+    any = true;
+    const left = items.filter(p => !p.done_today.length);
+    total += items.length; todo += left.length;
+    items.sort((a, b) => (a.done_today.length > 0) - (b.done_today.length > 0));
+    html += `<h2>${esc(r.name)} <span class="count">${items.length - left.length} of ${items.length}</span><span class="sp"></span>
+      ${left.length ? `<button class="small" onclick="markRoom('${r.id}')">Tick all</button>` : '✅'}</h2>`
+      + items.map(dueCard).join('');
+  }
+  if (dueDay !== board.today) { dueDay = board.today; left = null; dueOpen = false; }
+  const allDone = any && todo === 0, justDone = allDone && left > 0;
+  if (justDone) dueOpen = false;
+  left = any ? todo : null;
+  if (allDone) {
+    // fold the ticked list into a bar; it animates shut only right after the last tick
+    $('#due').innerHTML = `<div class="alldone ${justDone ? 'pop' : ''}"><span class="big">🎉</span>
+        <span class="grow"><b>All done for today</b><span class="sm">${total} plant${total === 1 ? '' : 's'} looked after</span></span>
+        <button class="small" onclick="toggleDue()">${dueOpen ? 'Hide' : 'Show'}</button></div>
+      <div class="fold ${dueOpen || justDone ? '' : 'shut'}" id="fold"><div>${html}</div></div>`;
+    if (justDone) { confetti(); setTimeout(() => { if (!dueOpen && $('#fold')) $('#fold').classList.add('shut'); }, 900); }
+  } else $('#due').innerHTML = any ? html : (board.snoozed_all_until ? '' : `<div class="empty">🌿 Nothing to do today</div>`);
+
+  // photo advice worth acting on, so you don't have to open every plant to find it
+  const adv = board.advice || [];
+  $('#advice').innerHTML = adv.length ? `<h2>💡 Photo advice <span class="count">${adv.length}</span></h2>` + adv.map(a => `
+    <div class="adv"><div class="top" onclick="openPlant(${a.id})">${pic(a)}
+      <div class="grow"><div class="name">${esc(a.name)}</div><div class="meta">${VERDICT[a.verdict] || ''} · ${esc(a.room)}</div></div>
+      <button class="small" onclick="event.stopPropagation(); hideAdvice(${a.photo_id})" aria-label="Hide">✕</button></div>
+      ${a.summary ? `<div class="sub" style="margin-top:6px">${esc(a.summary)}</div>` : ''}
+      ${a.items.length ? `<div class="acts">${a.items.map(x => `<div><span class="sub">${esc(x.text)}</span>
+        <button class="small primary" style="flex:none" onclick="applyFromHome(${a.photo_id}, ${x.i})">✓ ${esc(x.label)}</button></div>`).join('')}</div>` : ''}
+    </div>`).join('') : '';
+  const advIds = new Set(adv.map(a => a.id));
+
+  let all = '';
+  for (const r of board.rooms) {
+    all += `<h2>${esc(r.name)}</h2>`;
+    for (const p of r.plants) {
+      const bits = [];
+      if (p.water_due) bits.push(`💧 ${when(p.water_due)}`); else if (p.water_note) bits.push(p.water_note);
+      if (p.feed_due) bits.push(`🌱 ${when(p.feed_due)}`); else if (p.feed_note && p.feed_note !== 'No feeding') bits.push(p.feed_note);
+      if (p.snoozed_until) bits.push('snoozed');
+      all += `<div class="card" onclick="openPlant(${p.id})">${pic(p)}<div class="grow">
+        <div class="name">${esc(p.name)}${advIds.has(p.id) ? ' 💡' : ''}</div><div class="meta">${esc(bits.join(' · '))}</div></div></div>`;
+    }
+  }
+  $('#all').innerHTML = all;
+
+  const gy = board.graveyard || [];
+  $('#graveyard').innerHTML = gy.length ? `<details class="graveyard"><summary>🪦 Graveyard (${gy.length})</summary>`
+    + gy.map(p => `<div class="card dead" onclick="openPlant(${p.id})">${pic(p)}<div class="grow">
+        <div class="name">${esc(p.name)}</div><div class="meta">${esc(p.room)}${p.archived_on ? ' · since ' + esc(dayLabel(p.archived_on)) : ''}</div></div>
+        <button class="small" onclick="event.stopPropagation(); restore(${p.id})">Restore</button></div>`).join('')
+    + `</details>` : '';
+}
+function toggleDue() {
+  dueOpen = !dueOpen;
+  $('#fold').classList.toggle('shut', !dueOpen);
+  document.querySelector('.alldone button').textContent = dueOpen ? 'Hide' : 'Show';
+}
+function confetti() {
+  if (navigator.vibrate) navigator.vibrate([30, 60, 30]);
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const colours = ['#2f7d4f', '#5bbf84', '#f2c14e', '#e76f51', '#7fb3ea', '#c084fc'];
+  for (let i = 0; i < 90; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.background = colours[i % colours.length];
+    document.body.appendChild(c);
+    const drift = (Math.random() - .5) * 200, spin = (Math.random() - .5) * 1440;
+    c.animate([{transform: 'translate(0, 0) rotate(0)'},
+      {transform: `translate(${drift}px, ${innerHeight + 40}px) rotate(${spin}deg)`}],
+      {duration: 1800 + Math.random() * 1400, delay: Math.random() * 400, easing: 'cubic-bezier(.25, .6, .5, 1)'})
+      .onfinish = () => c.remove();
+  }
+}
+const dayLabel = iso => new Date(iso).toLocaleDateString('en-IE', {day: 'numeric', month: 'short', year: 'numeric'});
+
+let undoIds = [];
+function toast(msg, ids) {
+  $('#toastMsg').textContent = msg;
+  undoIds = ids || [];
+  $('#toastUndo').style.display = undoIds.length ? '' : 'none';
+  $('#toast').style.display = 'flex';
+  clearTimeout(toast.t); toast.t = setTimeout(() => $('#toast').style.display = 'none', 5000);
+}
+$('#toastUndo').onclick = async () => { await post('unmark', {ids: undoIds}); $('#toast').style.display = 'none'; load(); };
+
+async function mark(ids, what) {
+  await post('mark', {ids, what});
+  if (what === 'skip') toast('OK, checking again in a few days', ids);
+  load();
+}
+async function unmark(ids) { await post('unmark', {ids}); load(); }
+async function markRoom(roomId) {
+  const r = await post('mark', {room_id: roomId});
+  toast(`Ticked ${r.done.length} plant${r.done.length === 1 ? '' : 's'}`, r.done.map(d => d.id));
+  load();
+}
+async function unsnooze() { await post('unsnooze', {}); load(); }
+
+async function openPlant(id) {
+  const p = await api('plants/' + id);
+  const s = p.status || {};
+  const rooms = p.rooms.map(r => `<option value="${r.id}" ${r.id === p.room_id ? 'selected' : ''}>${esc(r.name)}</option>`).join('');
+  const opt = (vals, cur) => vals.map(v => `<option value="${v}" ${String(cur ?? '') === v ? 'selected' : ''}>${v || '-'}</option>`).join('');
+  const months = cur => MONTHS.slice(1).map((m, i) => `<option value="${i + 1}" ${cur === i + 1 ? 'selected' : ''}>${m}</option>`).join('');
+  $('#sheet').innerHTML = `
+    ${p.photo ? `<img class="hero" id="hero" src="photos/${esc(p.photo)}" alt="">` : `<div class="hero" style="display:grid;place-items:center;font-size:64px">🪴</div>`}
+    <div class="row"><input type="file" accept="image/*" id="photoIn" hidden>
+      <input type="file" accept="image/*" capture="environment" id="cameraIn" hidden>
+      <button class="small" onclick="$('#cameraIn').click()">📷 Take photo</button>
+      <button class="small" onclick="$('#photoIn').click()">🖼️ ${p.photo ? 'Choose new' : 'Choose photo'}</button>
+      <span style="flex:1"></span><button class="small" onclick="$('#dlg').close()">Close</button></div>
+    ${p.photo_nudge && !p.archived ? `<button class="linky" onclick="$('#cameraIn').click()">📷 No new photo for ${ago(p.photo_age_days)}. Take one to see how it's getting on?</button>` : ''}
+    <div id="ai"></div>
+    <h1>${esc(p.name)}</h1>
+    <div class="sub">${esc(p.species)}${p.species ? ' · ' : ''}${esc(p.room)}</div>
+    ${p.archived ? `<div class="banner"><span>🪦 In the graveyard${p.archived_on ? ' since ' + esc(dayLabel(p.archived_on)) : ''}</span>
+      <button class="small primary" onclick="restore(${p.id}, true)">Restore</button></div>` : `
+    <div class="row">
+      <span class="tag water">💧 ${s.water_due ? when(s.water_due) : esc(s.water_note)}</span>
+      <span class="tag feed">🌱 ${s.feed_due ? when(s.feed_due) : esc(s.feed_note)}</span>
+      ${s.interval_days ? `<span class="tag">every ${s.interval_days} days at the moment</span>` : ''}
+    </div>
+    <div class="row">
+      <button class="primary" onclick="markOne(${p.id}, 'water')">💧 Watered</button>
+      <button onclick="markOne(${p.id}, 'feed')">🌱 Fed</button>
+      <button onclick="markOne(${p.id}, 'both')">Both</button>
+      <button onclick="markOne(${p.id}, 'skip')">Still damp</button>
+      <button onclick="snoozeOne(${p.id})">Snooze 2 days</button>
+    </div>`}
+    ${p.task ? `<div class="banner"><span>🪴 ${esc(p.task)} ${p.task_on <= board.today ? 'now' : 'on ' + esc(dayLabel(p.task_on))}</span>
+      <span><button class="small" onclick="jobDone(${p.id}, true)">Done</button>
+      <button class="small" onclick="jobCancel(${p.id})">Cancel</button></span></div>` : ''}
+    ${p.care ? `<div class="care">${esc(p.care)}</div>` : ''}
+    ${p.photos.length ? `<details id="photosD"><summary>📸 Photos (${p.photos.length})</summary>
+      <div class="strip">${p.photos.map(ph => `<button id="th${ph.id}" onclick="showPhoto(${ph.id})">
+        <img src="photos/${esc(ph.file)}" alt="" loading="lazy">${esc(shortDay(ph.day))}</button>`).join('')}</div>
+      <div class="row" id="phActs"></div></details>` : ''}
+    <details><summary>History</summary><div class="hist">${p.history.map(e =>
+      `<div><span>${e.day} · ${e.kind}${e.note ? ' · ' + esc(e.note) : ''}</span><button class="small" onclick="undoEvent(${e.id}, ${p.id})">✕</button></div>`).join('') || 'Nothing yet'}</div></details>
+    <details><summary>Settings</summary>
+      <label>Name<input id="f_name" value="${esc(p.name)}"></label>
+      <label>Species<input id="f_species" value="${esc(p.species)}"></label>
+      <label>Room<select id="f_room_id">${rooms}</select></label>
+      <div class="grid2">
+        <label>Water every (summer, days)<input id="f_water_summer" type="number" value="${p.water_summer}"></label>
+        <label>Water every (winter, days)<input id="f_water_winter" type="number" value="${p.water_winter ?? ''}" placeholder="rain"></label>
+        <label>Feed every (days)<input id="f_feed_days" type="number" value="${p.feed_days ?? ''}" placeholder="never"></label>
+        <label>Pot size (optional)<select id="f_pot">${opt(['', 'small', 'medium', 'large'], p.pot)}</select></label>
+        <label>Feed from<select id="f_feed_from">${months(p.feed_from)}</select></label>
+        <label>Feed until<select id="f_feed_to">${months(p.feed_to)}</select></label>
+        <label>Light (optional)<select id="f_light">${opt(['', 'low', 'medium', 'bright'], p.light)}</select></label>
+        <label>Outdoors: rain reaches it?<select id="f_exposure">${opt(['open', 'covered'], p.exposure)}</select></label>
+      </div>
+      <label>Notes<textarea id="f_notes" rows="2">${esc(p.notes)}</textarea></label>
+      <div class="row"><button class="primary" onclick="save(${p.id})">Save</button>
+        ${p.archived ? '' : `<button onclick="retire(${p.id})">🪦 Move to graveyard</button>`}</div>
+    </details>`;
+  $('#photoIn').onchange = $('#cameraIn').onchange = async e => {
+    if (!e.target.files[0]) return;
+    const fd = new FormData(); fd.append('photo', e.target.files[0]);
+    toast('Uploading…');
+    await api(`plants/${p.id}/photo`, {method: 'POST', body: fd});
+    openPlant(p.id); load();
+  };
+  cur = p;
+  const main = p.photos.find(ph => ph.file === p.photo) || p.photos[0];
+  if (main) showPhoto(main.id, true);
+  if (!$('#dlg').open) $('#dlg').showModal();
+}
+
+// Photo history: every photo is kept, newest first. Tapping one shows it and its AI look-over.
+let cur = null, sel = null;
+const VERDICT = {thriving: '🌿 Thriving', fine: '🙂 Looking fine', struggling: '😟 Struggling',
+  poorly: '🥀 Poorly', dead: '🪦 Looks dead', unclear: '🤷 Hard to tell'};
+const shortDay = iso => new Date(iso).toLocaleDateString('en-IE', {day: 'numeric', month: 'short', year: '2-digit'});
+const ago = d => d >= 330 ? `over a year` : `${Math.max(1, Math.round(d / 30.4))} months`;
+function showPhoto(phid, opening) {
+  sel = cur.photos.find(ph => ph.id === phid);
+  // advice shows by itself for a month after the photo; older advice only when you tap that photo
+  sel.quiet = opening && (new Date(board.today) - new Date(sel.day)) / 864e5 > 30;
+  if (!sel) return;
+  if ($('#hero')) $('#hero').src = 'photos/' + sel.file;
+  document.querySelectorAll('.strip button').forEach(b => b.classList.toggle('sel', b.id === 'th' + phid));
+  const isMain = sel.file === cur.photo;
+  if ($('#phActs')) $('#phActs').innerHTML = `<span class="sub" style="flex:1">${esc(dayLabel(sel.day))}${isMain ? ' · main photo' : ''}</span>
+    ${isMain ? '' : `<button class="small" onclick="photoDo(${phid}, {main: true})">Use as main</button>`}
+    ${sel.ai_state ? '' : `<button class="small" onclick="photoDo(${phid}, {ask_ai: true})">🔍 Get advice</button>`}
+    <button class="small" onclick="photoDel(${phid})">Remove</button>`;
+  renderAi();
+}
+function renderAi() {
+  const a = sel.analysis, el = $('#ai');
+  if (!el) return;
+  if (sel.quiet && sel.ai_state === 'done') return void (el.innerHTML = '');
+  if (sel.ai_state === 'pending' || sel.ai_state === 'working') {
+    el.innerHTML = `<div class="ai sub">🔍 Having a look at this photo…</div>`;
+    clearTimeout(renderAi.t);
+    const id = sel.id, pid = cur.id;
+    renderAi.t = setTimeout(async () => {
+      if (!$('#dlg').open || cur.id !== pid || sel.id !== id) return;
+      const p = await api('plants/' + pid);
+      cur.photos = p.photos;
+      sel = cur.photos.find(ph => ph.id === id) || sel;
+      showPhoto(id);
+    }, 6000);
+  } else if (sel.ai_state === 'error') {
+    el.innerHTML = `<div class="ai sub">${esc(a?.error || 'No advice this time')} ·
+      <button class="linky" onclick="photoDo(${sel.id}, {ask_ai: true})">try again</button></div>`;
+  } else if (a) {
+    el.innerHTML = `<div class="ai"><b>${VERDICT[a.verdict] || esc(a.verdict)}</b>
+      <span class="when">· from the ${esc(shortDay(sel.day))} photo</span>
+      <div>${esc(a.summary)}</div>${a.compared ? `<div class="sub" style="margin-top:4px">${esc(a.compared)}</div>` : ''}
+      ${a.suggestions?.length ? `<ul>${a.suggestions.map((x, i) => `<li>${esc(x.text)}${sugBtn(x, i)}</li>`).join('')}</ul>` : ''}</div>`;
+  } else el.innerHTML = '';
+}
+// a suggestion the app can carry out gets a one-tap button; nothing changes without the tap
+function sugBtn(x, i) {
+  if (!x.change) return '';
+  if (x.applied) return `<div class="sub">✓ ${esc(x.applied.desc)} · <button class="linky" onclick="applySug(${i}, true)">undo</button></div>`;
+  return `<div><button class="small" style="margin-top:4px" onclick="applySug(${i})">✓ ${esc(x.change.label)}</button></div>`;
+}
+async function applySug(i, undo) {
+  const r = await post(`photos/${sel.id}/apply`, {i, undo: !!undo});
+  if (r.error) return toast(r.error);
+  toast(undo ? 'Put back' : r.desc);
+  const phid = sel.id;
+  await openPlant(cur.id); showPhoto(phid); load();
+}
+async function applyFromHome(phid, i) {
+  const r = await post(`photos/${phid}/apply`, {i});
+  if (r.error) return toast(r.error);
+  toast(r.desc); load();
+}
+async function hideAdvice(phid) { await post(`photos/${phid}/apply`, {seen: true}); toast('Hidden. It stays on the plant page.'); load(); }
+async function jobDone(id, reopen) { await post(`plants/${id}/job-done`, {}); toast('Done 🌱'); if (reopen) openPlant(id); load(); }
+async function jobCancel(id) { await api('plants/' + id, {method: 'PATCH', body: {task: null, task_on: null}}); openPlant(id); load(); }
+async function photoDo(phid, body) { await api('photos/' + phid, {method: 'PATCH', body}); await openPlant(cur.id); showPhoto(phid); load(); }
+async function photoDel(phid) {
+  if (!confirm('Remove this photo from the history?')) return;
+  await api('photos/' + phid, {method: 'DELETE'}); openPlant(cur.id); load();
+}
+async function markOne(id, what) { await post('mark', {ids: [id], what}); toast('Logged', [id]); openPlant(id); load(); }
+async function snoozeOne(id) { await post('snooze', {ids: [id], days: 2}); toast('Snoozed for 2 days'); openPlant(id); load(); }
+async function undoEvent(eid, pid) { await api('events/' + eid, {method: 'DELETE'}); openPlant(pid); load(); }
+async function save(id) {
+  const num = k => { const v = $('#f_' + k).value; return v === '' ? null : Number(v); };
+  await api('plants/' + id, {method: 'PATCH', body: {
+    name: $('#f_name').value, species: $('#f_species').value, room_id: $('#f_room_id').value,
+    water_summer: num('water_summer') || 7, water_winter: num('water_winter'), feed_days: num('feed_days'),
+    feed_from: num('feed_from'), feed_to: num('feed_to'), pot: $('#f_pot').value || null,
+    light: $('#f_light').value || null, exposure: $('#f_exposure').value, notes: $('#f_notes').value}});
+  toast('Saved'); openPlant(id); load();
+}
+async function retire(id) {
+  if (!confirm('Move this plant to the graveyard? Its history is kept and you can restore it.')) return;
+  await api('plants/' + id, {method: 'PATCH', body: {archived: 1}});
+  $('#dlg').close(); toast('Moved to the graveyard 🪦'); load();
+}
+async function restore(id, reopen) {
+  await api('plants/' + id, {method: 'PATCH', body: {archived: 0}});
+  toast('Restored 🌱'); if (reopen) openPlant(id); load();
+}
+$('#addBtn').onclick = () => {
+  $('#sheet').innerHTML = `<h1>Add a plant</h1>
+    <label>Name<input id="n_name" placeholder="e.g. Lavender"></label>
+    <label>Room<select id="n_room">${board.rooms.map(r => `<option>${esc(r.name)}</option>`).join('')}</select></label>
+    <p class="sub">It starts on a basic schedule. Tell Claude about it ("I added a lavender in a pot out the back")
+      and it will set the right one.</p>
+    <div class="row"><button class="primary" id="n_go">Add</button><button onclick="$('#dlg').close()">Cancel</button></div>`;
+  $('#n_go').onclick = async () => {
+    const r = await post('plants', {name: $('#n_name').value, room: $('#n_room').value});
+    if (r.id) { await load(); openPlant(r.id); }
+  };
+  $('#dlg').showModal();
+};
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+load();
+setInterval(() => { if (!$('#dlg').open) load(); }, 60000);
+</script>
+</body>
+</html>
